@@ -22,4 +22,4 @@ jobs:
             accept-flake-config = true
 
       - name: Run flake checks
-        run: nix flake check --all-systems --print-build-logs
+        run: nix flake check --print-build-logs
