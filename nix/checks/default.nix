@@ -1,10 +1,10 @@
-_: {
+{ self, ... }: {
   perSystem = { pkgs, ... }: {
     checks = {
       # Linting with statix
       lint = pkgs.stdenv.mkDerivation {
         name = "lint";
-        src = ../..;
+        src = self;
         buildInputs = [ pkgs.statix ];
         buildPhase = ''
           statix check .

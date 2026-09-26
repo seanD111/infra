@@ -24,9 +24,19 @@
         "aarch64-darwin"
       ];
       imports = [
-        inputs.treefmt-nix.flakeModule
+        inputs.flake-parts.flakeModules.flakeModules
         ./nix/checks
         ./nix/formatters
       ];
+      flake.flakeModules = {
+        checks = ./nix/checks;
+        formatters = ./nix/formatters;
+        default = {
+          imports = [
+            ./nix/checks
+            ./nix/formatters
+          ];
+        };
+      };
     };
 }
