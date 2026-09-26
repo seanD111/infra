@@ -1,0 +1,25 @@
+name: Flake CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  check:
+    name: nix flake check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v23
+        with:
+          extra-conf: |
+            accept-flake-config = true
+
+      - name: Run flake checks
+        run: nix flake check --all-systems --print-build-logs
