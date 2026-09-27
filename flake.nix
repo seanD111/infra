@@ -26,14 +26,17 @@
       imports = [
         inputs.flake-parts.flakeModules.flakeModules
         ./nix/checks
+        ./nix/devshells
         ./nix/formatters
       ];
       flake.flakeModules = {
         checks = ./nix/checks;
+        devshells = ./nix/devshells;
         formatters = ./nix/formatters;
         default = {
           imports = [
             ./nix/checks
+            ./nix/devshells
             ./nix/formatters
           ];
         };
