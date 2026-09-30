@@ -33,18 +33,21 @@
         ./nix/devshells
         ./nix/formatters
         ./nix/nixosmodules
+        ./nix/tests
       ];
       flake.flakeModules = {
         checks = ./nix/checks;
         devshells = ./nix/devshells;
         formatters = ./nix/formatters;
         nixos-modules = ./nix/nixosmodules;
+        tests = ./nix/tests;
         default = {
           imports = [
             ./nix/checks
             ./nix/devshells
             ./nix/formatters
             ./nix/nixosmodules
+            ./nix/tests
           ];
         };
       };
