@@ -12,6 +12,10 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    srvos = {
+      url = "github:nix-community/srvos";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -28,16 +32,19 @@
         ./nix/checks
         ./nix/devshells
         ./nix/formatters
+        ./nix/nixosmodules
       ];
       flake.flakeModules = {
         checks = ./nix/checks;
         devshells = ./nix/devshells;
         formatters = ./nix/formatters;
+        nixos-modules = ./nix/nixosmodules;
         default = {
           imports = [
             ./nix/checks
             ./nix/devshells
             ./nix/formatters
+            ./nix/nixosmodules
           ];
         };
       };
