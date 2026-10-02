@@ -19,8 +19,10 @@
     programs.bash.loginShellInit = ''
       if [ "$(tty)" = "/dev/tty1" ]; then
         mkdir -p ~/.config/sway
-        cat /etc/sway/config > ~/.config/sway/config
-        echo 'bar { command "waybar" }' >> ~/.config/sway/config
+        # waybar is started by the user systemd graphical-session.target; drop
+        # the stock swaybar block but keep the config.d include that wires the
+        # systemd session.
+        sed '/^bar {/,/^}/d' /etc/sway/config > ~/.config/sway/config
         echo 'output * bg "#101010" solid_color' >> ~/.config/sway/config
         sway --validate
         sway
@@ -41,9 +43,24 @@
 
     q = shlex.quote
 
+    def session_run(command, succeed=True):
+        """Run a command as alice inside the sway session environment.
+
+        Wayland clients resolve the compositor via XDG_RUNTIME_DIR and
+        WAYLAND_DISPLAY; swaymsg additionally via SWAYSOCK. A login shell
+        (`su - alice`) would strip all of these, so the helper injects them.
+        """
+        env = (
+            f"XDG_RUNTIME_DIR=/run/user/{uid} "
+            "WAYLAND_DISPLAY=wayland-1 "
+            "SWAYSOCK=/tmp/sway-ipc.sock"
+        )
+        shell = q(f"{env} {command}")
+        runner = workstation.succeed if succeed else workstation.execute
+        return runner(f"su - alice -c {shell}")
+
     def swaymsg(command="", type="command"):
-        shell = q(f"swaymsg -t {q(type)} -- {q(command)}")
-        return json.loads(workstation.succeed(f"su - alice -c {shell}"))
+        return json.loads(session_run(f"swaymsg -t {q(type)} -- {q(command)}"))
 
     def walk(tree):
         yield tree
@@ -62,18 +79,27 @@
         retry(check)
 
     workstation.start()
+    uid = workstation.succeed("id -u alice").strip()
+
     workstation.succeed("systemctl is-enabled bluetooth.service")
     workstation.succeed("grep -q 'AutoEnable=false' /etc/bluetooth/main.conf")
     workstation.succeed("grep -q 'PairableTimeout=30' /etc/bluetooth/main.conf")
     workstation.wait_for_unit("multi-user.target")
-    workstation.wait_for_file("/run/user/1000/wayland-1")
+    workstation.wait_for_file(f"/run/user/{uid}/wayland-1")
     workstation.wait_for_file("/tmp/sway-ipc.sock")
 
     tree = swaymsg(type="get_tree")
     assert tree["type"] == "root", "sway IPC is not a root tree"
     workstation.wait_until_succeeds("pgrep waybar")
 
+    # waybar takes ~2.5s from process spawn (pgrep success) to map its layer
+    # surface; "Bar configured" in the journal marks the first rendered frame.
+    workstation.wait_until_succeeds("journalctl --no-pager | grep -qF 'Bar configured'")
+    workstation.sleep(2)
 
+    workstation.screenshot("waybar-screenshot")
+    # session_run("grim /tmp/waybar-grim.png")
+    # workstation.copy_from_machine("/tmp/waybar-grim.png", "")
     swaymsg("exec foot")
     wait_for_window("foot")
     workstation.sleep(2)
@@ -81,10 +107,8 @@
     # Capture the compositor framebuffer from inside the guest: this shows
     # the real desktop (background, bar, windows) regardless of the emulated
     # display state.
-    workstation.succeed(
-        "su - alice -c 'XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 grim /tmp/sway-desktop.png'"
-    )
-    workstation.copy_from_machine("/tmp/sway-desktop.png", "")
-    workstation.screenshot("display")
+    # session_run("grim /tmp/sway-grim.png")
+    # workstation.copy_from_machine("/tmp/sway-grim.png", "")
+    workstation.screenshot("sway-screenshot")
   '';
 }

@@ -30,6 +30,16 @@
               self.nixosModules."apps/firefox"
             ];
           };
+
+          workstation-sway = inputs.nixpkgs.lib.nixos.runTest {
+            imports = [ ./sway.nix ];
+            hostPkgs = inputs.nixpkgs.legacyPackages.${system};
+            node.specialArgs = { inherit inputs; };
+            nodes.workstation.imports = [
+              self.nixosModules."roles/workstation/sway"
+              self.nixosModules."hardware/bluetooth"
+            ];
+          };
         };
       };
 }
