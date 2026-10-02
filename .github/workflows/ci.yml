@@ -23,3 +23,13 @@ jobs:
 
       - name: Run flake checks
         run: nix flake check --print-build-logs
+
+      - name: Build sway VM test
+        run: nix build .#checks.x86_64-linux.workstation-sway -o result-sway
+
+      - name: Upload VM test screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm-test-screenshots
+          path: result-sway/*.png
+          if-no-files-found: warn
