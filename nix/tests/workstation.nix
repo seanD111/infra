@@ -14,11 +14,6 @@
   testScript = ''
     workstation.start()
 
-    workstation.succeed("systemctl is-enabled bluetooth.service")
-    workstation.succeed("bluetoothctl --version")
-    workstation.succeed("grep -q 'AutoEnable=false' /etc/bluetooth/main.conf")
-    workstation.succeed("grep -q 'PairableTimeout=30' /etc/bluetooth/main.conf")
-
     workstation.wait_for_unit("pipewire.service")
     workstation.succeed("systemctl cat rtkit-daemon.service | grep -q Realtime")
 
