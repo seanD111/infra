@@ -27,6 +27,8 @@ jobs:
 
       - name: Set up Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Run flake checks
         run: nix flake check --print-build-logs
@@ -48,6 +50,8 @@ jobs:
 
       - name: Set up Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Build workstation VM test
         run: nix build .#checks.x86_64-linux.workstation -o result-workstation
