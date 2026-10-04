@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: ["**"]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   check:
     name: nix flake check
@@ -21,15 +25,46 @@ jobs:
           extra-conf: |
             accept-flake-config = true
 
+      - name: Set up Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
       - name: Run flake checks
         run: nix flake check --print-build-logs
+
+  nixos-tests:
+    name: nixos vm tests
+    needs: check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v23
+        with:
+          extra-conf: |
+            accept-flake-config = true
+
+      - name: Set up Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build workstation VM test
+        run: nix build .#checks.x86_64-linux.workstation -o result-workstation
 
       - name: Build sway VM test
         run: nix build .#checks.x86_64-linux.workstation-sway -o result-sway
 
-      - name: Upload VM test screenshots
+      - name: Upload sway test screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: vm-test-screenshots
+          name: sway-test-screenshots
           path: result-sway/*.png
+          if-no-files-found: warn
+
+      - name: Upload workstation test screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: workstation-test-screenshots
+          path: result-workstation/*.png
           if-no-files-found: warn
