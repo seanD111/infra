@@ -1,5 +1,5 @@
 {
-  description = "seanD111's flake";
+  description = "seanD111's importable NixOS infrastructure library";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -20,6 +20,22 @@
 
   outputs =
     inputs@{ flake-parts, ... }:
+    let
+      # single source of truth for the library shape (srvos-style)
+      library = import ./.;
+
+      # reusable flake-parts modules: imported below to activate this
+      # flake's own outputs, and exported as flakeModules for consumers
+      flakeModules = {
+        checks = ./checks;
+        devshells = ./devshells;
+        formatters = ./formatters;
+        tests = ./tests;
+        nixos-modules = {
+          flake.nixosModules = library.nixosModules;
+        };
+      };
+    in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
@@ -29,27 +45,11 @@
       ];
       imports = [
         inputs.flake-parts.flakeModules.flakeModules
-        ./nix/checks
-        ./nix/devshells
-        ./nix/formatters
-        ./nix/nixosmodules
-        ./nix/tests
-      ];
-      flake.flakeModules = {
-        checks = ./nix/checks;
-        devshells = ./nix/devshells;
-        formatters = ./nix/formatters;
-        nixos-modules = ./nix/nixosmodules;
-        tests = ./nix/tests;
-        default = {
-          imports = [
-            ./nix/checks
-            ./nix/devshells
-            ./nix/formatters
-            ./nix/nixosmodules
-            ./nix/tests
-          ];
-        };
+      ]
+      ++ builtins.attrValues flakeModules;
+      flake.flakeModules = flakeModules // {
+        # consumer-safe alias: only the NixOS module wiring
+        default = flakeModules.nixos-modules;
       };
     };
 }
